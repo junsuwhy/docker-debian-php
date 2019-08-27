@@ -82,12 +82,20 @@ RUN \
   sed -i 's/^;pm\.max_requests = .*/pm.max_requests = 50/g' /etc/php/7.2/fpm/pool.d/www.conf && \
   sed -i 's/^;request_terminate_timeout = .*/request_terminate_timeout = 7200/g' /etc/php/7.2/fpm/pool.d/www.conf
 
+RUN \
+  apt-get update && \
+  apt-get install -y \
+    apache2 \ 
+    libapache2-mod-php7.2
 
 ADD container/mysql/mysql-init.sh /usr/local/bin/mysql-init.sh
 ADD container/rsyslogd/rsyslog.conf /etc/rsyslog.conf
 ADD container/supervisord/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-RUN \
-  mkdir -p /run/php && chmod 777 /run/php
+ADD container/php/php.ini /etc/php/7.2/cli/php.ini
+ADD container/apache2/000-default.conf /etc/apache2/sites-available/000-default.conf
+RUN \ 
+  a2enmod rewrite && \
+  service apache2 restart
 
 ### END
 WORKDIR /var/www/html
