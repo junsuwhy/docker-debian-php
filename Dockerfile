@@ -60,6 +60,17 @@ RUN \
   bash -c "echo extension=/usr/lib/php/20170718/mcrypt.so > /etc/php/7.2/mods-available/mcrypt.ini" && \
   bash -c "phpenmod mcrypt"
 
+# apache2 & xdebug
+RUN \
+  apt-get update && \
+  apt-get install -y \
+    apache2 \ 
+    libapache2-mod-php7.2
+
+RUN \ 
+  pecl install -f xdebug && \ 
+  echo "zend_extension=$(find /usr/lib/ -name xdebug.so)" > /etc/php/7.2/apache2/conf.d/xdebug.ini
+
 RUN \
   apt-get remove -y php7.2-dev gcc make autoconf libc-dev pkg-config php-pear && \
   apt-get autoremove -y && \
@@ -82,17 +93,12 @@ RUN \
   sed -i 's/^;pm\.max_requests = .*/pm.max_requests = 50/g' /etc/php/7.2/fpm/pool.d/www.conf && \
   sed -i 's/^;request_terminate_timeout = .*/request_terminate_timeout = 7200/g' /etc/php/7.2/fpm/pool.d/www.conf
 
-RUN \
-  apt-get update && \
-  apt-get install -y \
-    apache2 \ 
-    libapache2-mod-php7.2
-
 ADD container/mysql/mysql-init.sh /usr/local/bin/mysql-init.sh
 ADD container/rsyslogd/rsyslog.conf /etc/rsyslog.conf
 ADD container/supervisord/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-ADD container/php/php.ini /etc/php/7.2/cli/php.ini
+ADD container/php/php.ini /etc/php/7.2/apache2/php.ini
 ADD container/apache2/000-default.conf /etc/apache2/sites-available/000-default.conf
+
 RUN \ 
   a2enmod rewrite && \
   service apache2 restart
